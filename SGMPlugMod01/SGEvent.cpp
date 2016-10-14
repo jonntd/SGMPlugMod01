@@ -390,11 +390,10 @@ void SGEvent::edgeSlideEvent() {
 	static bool edgeSlideMoved = false;
 
 	if (m_shiftPressed) return;
-	if (!m_controlPressed) return;
 
 	if (edgeSplitIntersectResult[0].resultType != SGComponentType::kEdge) return;
 
-	if (m_middleJustPress) {
+	if (m_middleJustPress && m_controlPressed) {
 		SGFunction::clearSplitPoint();
 		SGFunction::prepairEdgeMove();
 		edgeSlidePressed = true;
