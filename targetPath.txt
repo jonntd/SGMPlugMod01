@@ -1,1 +1,1 @@
-D:/03.WORK/CODING/maya/plugins/SGMPlugMod01
+D:/03.WORK/CODING/maya/plugins/SGMPlug/SGMPlugMod01

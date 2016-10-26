@@ -5,7 +5,7 @@
 #include <SGMesh.h>
 #include <SGSelection.h>
 #include <SGMatrix.h>
-#include "SGOption.h"
+#include "SGToolCondition.h"
 #include "SGPrintf.h"
 
 
@@ -132,7 +132,7 @@ void SGNormalManip::updateCenter(MPoint* pCenter) {
 	MPoint origCenter = intersector.center;
 	if (pCenter == NULL)
 	{
-		intersector.center = SGSelection::sels.getSelectionCenter(SGOption::option.symInfo );
+		intersector.center = SGSelection::sels.getSelectionCenter(SGToolCondition::option.symInfo );
 	}
 	else {
 		intersector.center = *pCenter;

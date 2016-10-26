@@ -15,7 +15,7 @@
 #include "SGMarkingMenu.h"
 #include "SGKey.h"
 #include "SGMouse.h"
-#include "SGOption.h"
+#include "SGToolCondition.h"
 #include "SGGLWidget.h"
 
 
@@ -185,16 +185,18 @@ bool SGEvent::translateEvent(QEvent* evt) {
 
 
 void SGEvent::updateCamMatrix() {
-	if (SGOption::option.symInfo.isNoMirror()) {
+	if (SGToolCondition::option.symInfo.isNoMirror()) {
 		camMatrixList.setLength(1);
 		camMatrixList[0] = SGMatrix::getCamMatrix();
 		GeneralManips.resize(1);
 		GeneralManips[0].camMatrix = camMatrixList[0];
 	}
-	else if (SGOption::option.symInfo.isXMirror()) {
+	else if (SGToolCondition::option.symInfo.isXMirror()) {
+		MMatrix meshMatrix = SGMesh::pMesh->dagPath.inclusiveMatrix();
+		MMatrix meshMatrixInverse = SGMesh::pMesh->dagPath.inclusiveMatrixInverse();
 		camMatrixList.setLength(2);
 		camMatrixList[0] = SGMatrix::getCamMatrix();
-		camMatrixList[1] = camMatrixList[0] * SGOption::option.symInfo.mirrorMatrix();
+		camMatrixList[1] = camMatrixList[0] * meshMatrixInverse * SGToolCondition::option.symInfo.mirrorMatrix() * meshMatrix;
 		GeneralManips.resize(2);
 		GeneralManips[0].camMatrix = camMatrixList[0];
 		GeneralManips[1].camMatrix = camMatrixList[1];
@@ -202,6 +204,7 @@ void SGEvent::updateCamMatrix() {
 		GeneralManips[1].manipNum = 1;
 	}
 }
+
 
 
 bool SGEvent::isAutoRepeat(QEvent* evt) {
@@ -219,7 +222,7 @@ bool SGEvent::isAutoRepeat(QEvent* evt) {
 void SGEvent::getGeneralIntersection() {
 
 	if (SGMesh::pMesh->updateRequired()) {
-		bool update = SGMesh::pMesh->update( SGOption::option.symInfo );
+		bool update = SGMesh::pMesh->update( SGToolCondition::option.symInfo );
 		if (!update) {
 			MGlobal::displayError("mesh update failed");
 			MGlobal::executeCommand("setToolTo selectSuperContext;", false, true );

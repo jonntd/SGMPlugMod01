@@ -11,7 +11,7 @@
 #include <SGSymmetry.h>
 #include <SGPrintf.h>
 
-#include "SGOption.h"
+#include "SGToolCondition.h"
 
 
 extern SGManip* manip;
@@ -182,7 +182,7 @@ bool SGTransformManip::build()
 		MPoint& targetPoint = pMesh->points[m_selVertices[i]];
 		pMesh->isCenter(m_selVertices[i], SGComponentType::kVertex);
 		if( !pMesh->isCenter(m_selVertices[i], SGComponentType::kVertex ) &&
-			SGOption::option.symInfo.compairIsMirror( intersector.intersectPoint, targetPoint ) ) continue;
+			SGToolCondition::option.symInfo.compairIsMirror( intersector.intersectPoint, targetPoint ) ) continue;
 		bb.expand(targetPoint);
 	}
 
@@ -212,7 +212,7 @@ void SGTransformManip::updateCenter( MPoint* pCenter ) {
 	MPoint center;
 	if (pCenter == NULL)
 	{
-		center = SGSelection::sels.getSelectionCenter(SGOption::option.symInfo );
+		center = SGSelection::sels.getSelectionCenter(SGToolCondition::option.symInfo );
 	}
 	else {
 		center = *pCenter;

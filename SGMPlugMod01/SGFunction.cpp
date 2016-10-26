@@ -13,7 +13,7 @@
 #include "SGSoftSelectionManip.h"
 #include "SGDragSelectionManip.h"
 #include "SGNodeControl.h"
-#include "SGOption.h"
+#include "SGToolCondition.h"
 #include "Names.h"
 
 #include <SGMesh.h>
@@ -159,7 +159,7 @@ void SGFunction::prepairVtxMove()
 	points_before = SGMesh::pMesh->points;
 	normals_before = SGMesh::pMesh->normals;
 	points_after = points_before;
-	origCenter = SGSelection::sels.getSelectionCenter(SGOption::option.symInfo);
+	origCenter = SGSelection::sels.getSelectionCenter(SGToolCondition::option.symInfo);
 	getPointOffset(origCenter);
 
 	for (int i = 0; i < snapIndexArr.size(); i++)
@@ -224,10 +224,14 @@ void SGFunction::vertexMove_ing()
 	MPoint movePoint = getWorldPointFromMousePoint(origCenter);
 	transManip.updateCenter();
 
-	double mainWeight = SGOption::option.vertexWeight;
+	double mainWeight = SGToolCondition::option.vertexWeight;
 	MVector addVector = (movePoint - origCenter)*mainWeight;
-	addVector *= SGMesh::pMesh->dagPath.inclusiveMatrixInverse();
 
+	//manip->clearManip(3);
+	//manip->pushPoint(3, addVector + origCenter, MColor(1, 0, 0));
+
+	addVector *= SGMesh::pMesh->dagPath.inclusiveMatrixInverse();
+	
 	MPoint compairCenter = origCenter;
 	if (fabs(compairCenter.x) < 0.01) {
 		compairCenter.x = 0.01;
@@ -236,7 +240,7 @@ void SGFunction::vertexMove_ing()
 	MFloatArray vtxWeights = vertexWeights;
 	for (unsigned int i = 0; i < vtxWeights.length(); i++) {
 		if (!vtxWeights[i]) continue;
-		convertVector = SGOption::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addVector, pMesh->isCenter( i, SGComponentType::kVertex) );
+		convertVector = SGToolCondition::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addVector, pMesh->isCenter( i, SGComponentType::kVertex) );
 		points_after[i] = convertVector*(double)vtxWeights[i] + points_before[i];
 	}
 	fnMesh.setPoints(points_after);
@@ -267,7 +271,7 @@ void SGFunction::vertexMove_slide()
 	slidingIntersector.setDagPath(SGMesh::pMesh->dagPath);
 	slidingIntersector.camMatrix = SGMatrix::getCamMatrix();
 	
-	double mainWeight = SGOption::option.vertexWeight;
+	double mainWeight = SGToolCondition::option.vertexWeight;
 	double weightedX = (SGMouse::x - mouseXOrig)* mainWeight + mouseXOrig + pointOffsetXY.x;
 	double weightedY = (SGMouse::y - mouseYOrig)* mainWeight + mouseYOrig + pointOffsetXY.y;
 
@@ -285,23 +289,32 @@ void SGFunction::vertexMove_slide()
 	MMatrix meshMatrix = SGMesh::pMesh->dagPath.inclusiveMatrix();
 	MMatrix meshMatrixInv = SGMesh::pMesh->dagPath.inclusiveMatrixInverse();
 
-	MPoint addVector = intersectPoint - origCenterIntersectPoint;
+	/*
+	manip->clearManip(3);
+	manip->pushPoint(3, origCenterIntersectPoint, MColor( 1,1,1 ) );
+	manip->pushPoint(3, intersectPoint, MColor(0, 0, 1));
+	*/
+
+	MVector addVector = intersectPoint - origCenterIntersectPoint;
+	addVector *= meshMatrixInv;
+
 	MVector convertAddVector;
 	transManip.updateCenter();
 	MPoint compairCenter = origCenter;
 	if (fabs(compairCenter.x) < 0.01) {
 		compairCenter.x = 0.01;
 	}
+	
 	for (unsigned int i = 0; i < vertexWeights.length(); i++)
 	{
 		if (!vertexWeights[i]) continue;
 		bool isCenter = SGMesh::pMesh->isCenter(i, SGComponentType::kVertex);
-		convertAddVector = SGOption::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addVector, isCenter );
+		convertAddVector = SGToolCondition::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addVector, isCenter );
 		MPoint localMovePoint = (points_before[i] + convertAddVector * (double)vertexWeights[i] );
 		SGMesh::pMesh->intersector->getClosestPoint(localMovePoint, pointOnMesh);
 		MPoint resultPoint = MPoint(pointOnMesh.getPoint());
 		points_after[i] = resultPoint;
-		if (isCenter) SGOption::option.symInfo.convertPointToCenter( points_after[i] );
+		if (isCenter) SGToolCondition::option.symInfo.convertPointToCenter( points_after[i] );
 	}
 	fnMesh.setPoints(points_after);
 }
@@ -412,8 +425,10 @@ void SGFunction::vertexMove_snap()
 
 	MFnMesh fnMesh = SGMesh::pMesh->dagPath;
 	SGMesh* pMesh = SGMesh::pMesh;
+	MMatrix meshMatrix = pMesh->dagPath.inclusiveMatrix();
+	MMatrix meshMatrixInverse = pMesh->dagPath.inclusiveMatrixInverse();
 	int snapIndex = snapIndexArr[0];
-	MVector addPoint = points_before[snapIndex] - localOrigCenter;
+	MVector addPoint = (points_before[snapIndex] - localOrigCenter)*meshMatrix;
 
 	if (transManip.intersectType == SGTransformManipIntersector::kX) {
 		addPoint.y = 0; addPoint.z = 0;
@@ -430,6 +445,7 @@ void SGFunction::vertexMove_snap()
 		MVector targetVector = targetPoint - movePoint;
 		addPoint = origNormal *(origNormal * targetVector) / pow(origNormal.length(), 2);
 	}
+	addPoint *= meshMatrixInverse;
 
 	MPoint compairCenter = localOrigCenter;
 	if (fabs(compairCenter.x) < 0.01) {
@@ -444,14 +460,13 @@ void SGFunction::vertexMove_snap()
 	else {
 		for (unsigned int i = 0; i < vertexWeights.length(); i++) {
 			if (!vertexWeights[i]) continue;
-			MVector convertVector = SGOption::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addPoint, pMesh->isCenter(i, SGComponentType::kVertex));
+			MVector convertVector = SGToolCondition::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], addPoint, pMesh->isCenter(i, SGComponentType::kVertex));
 			points_after[i] = convertVector*(double)vertexWeights[i] + points_before[i];
 		}
 	}
 	fnMesh.setPoints(points_after);
 	transManip.updateCenter();
 }
-
 
 void SGFunction::vertexMove_direction( MVector direction )
 {
@@ -474,27 +489,34 @@ void SGFunction::vertexMove_direction( MVector direction )
 	normal.normalize();
 
 	MFnMesh fnMesh = SGMesh::pMesh->dagPath;
-	MPoint intersectPoint = SGMatrix::getLineIntersectPoint(point, point + normal, SGMouse::x - mouseXOrig, SGMouse::y - mouseYOrig, SGMatrix::getCamMatrix() );
+
+	MPoint intersectPoint = SGMatrix::getLineIntersectPoint(point, point + normal, SGMouse::x + pointOffsetXY.x, SGMouse::y + pointOffsetXY.y, SGMatrix::getCamMatrix() );
+	
 	MVector intersectVector = intersectPoint - point;
 	double intersectWeight = intersectVector.length() / normal.length();
 	if ( intersectVector * normal < 0 ) intersectWeight *= -1;
 
-	double mainWeight = SGOption::option.vertexWeight;
+	/*
+	sgPrintf("intersectWeight : %f", intersectWeight);
+	manip->clearManip(3);
+	manip->pushPoint(3, point, MColor(1, 1, 1));
+	manip->pushPoint(3, point + normal * intersectWeight, MColor(1,0,0) );
+	*/
+
+	double mainWeight = SGToolCondition::option.vertexWeight;
 
 	MPoint compairCenter = origCenter;
 	if (fabs(compairCenter.x) < 0.01) {
 		compairCenter.x = 0.01;
 	}
+
+	MMatrix meshMtxInverse = pMesh->dagPath.inclusiveMatrixInverse();;
+
 	for (unsigned int i = 0; i < vertexWeights.length(); i++) {
 		if (!vertexWeights[i]) continue;
 		MPoint targetPoint = points_before[i];
 		MPoint targetNormal;
-		if (direction.length()){
-			targetNormal = SGOption::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], normal, pMesh->isCenter(i, SGComponentType::kVertex) );
-		}
-		else {
-			targetNormal = normals_before[i];
-		}
+		targetNormal = SGToolCondition::option.symInfo.convertVectorByMirror(compairCenter, points_before[i], normal * meshMtxInverse, pMesh->isCenter(i, SGComponentType::kVertex) );
 
 		MPoint resultPoint = targetPoint + targetNormal * intersectWeight * (double)vertexWeights[i] * mainWeight;
 		points_after[i] = resultPoint;
@@ -513,12 +535,12 @@ void SGFunction::vertexMove_normal()
 	if (pMesh == NULL) return;
 
 	MFnMesh fnMesh = SGMesh::pMesh->dagPath;
-	MPoint intersectPoint = SGMatrix::getLineIntersectPoint(origCenter, origCenter + origNormal, SGMouse::x - mouseXOrig, SGMouse::y - mouseYOrig, SGMatrix::getCamMatrix());
+	MPoint intersectPoint = SGMatrix::getLineIntersectPoint(origCenter, origCenter + origNormal, SGMouse::x + pointOffsetXY.x, SGMouse::y + pointOffsetXY.y, SGMatrix::getCamMatrix());
 	MVector intersectVector = intersectPoint - origCenter;
 	double intersectWeight = intersectVector.length() / origNormal.length();
 	if (intersectVector * origNormal < 0) intersectWeight *= -1;
 
-	double allWeight = SGOption::option.vertexWeight;
+	double allWeight = SGToolCondition::option.vertexWeight;
 	for (unsigned int i = 0; i < vertexWeights.length(); i++) {
 		if (!vertexWeights[i]) continue;
 		MPoint targetPoint = points_before[i];
@@ -661,7 +683,7 @@ void SGFunction::prepairEdgeMove()
 			center = (edgesPoints[i][j][0] + edgesPoints[i][j][1]) / 2.0;
 			positive = (edgesPoints[i][j][2] + edgesPoints[i][j][3]) / 2.0;
 			direction = positive - center;
-			MVector convert = SGOption::option.symInfo.convertVectorByMirror(compairCenter, center, directionVector, false);
+			MVector convert = SGToolCondition::option.symInfo.convertVectorByMirror(compairCenter, center, directionVector, false);
 
 			double dotValue = convert.normal() * direction.normal();
 			if (fabs(dotValue) > fabs(maxDotValue)) {
@@ -685,7 +707,7 @@ void SGFunction::prepairEdgeMove()
 	slideParam = 0;
 }
 
-
+extern SGManip* manip;
 void SGFunction::edgeMove_slide() {
 	 SGMesh* pMesh = SGMesh::pMesh;
 
@@ -695,16 +717,25 @@ void SGFunction::edgeMove_slide() {
 	MPoint negativePoint = (slidePoints[4] + slidePoints[5]) / 2.0;
 	MVector directionVector = positivePoint - edgeCenter;
 
-	MPoint pointIntersectP = SGMatrix::getLineIntersectPoint(edgeCenter, positivePoint, SGMouse::x - mouseXOrig, SGMouse::y - mouseYOrig, SGMatrix::getCamMatrix());
+	MPoint pointIntersectP = SGMatrix::getLineIntersectPoint(edgeCenter, positivePoint, SGMouse::x + pointOffsetXY.x, SGMouse::y + pointOffsetXY.y, SGMatrix::getCamMatrix());
 	MVector vectorIntersectP = pointIntersectP - edgeCenter;
+
+	/*
+	manip->clearManip(3);
+	MPointArray points; points.setLength(2);
+	points[0] = edgeCenter;
+	points[1] = pointIntersectP;
+	manip->pushPoint(3, edgeCenter, MColor(1, 0, 0));
+	manip->pushLine(3, points, MColor(1, 1, 0));
+	*/
 
 	double paramP = vectorIntersectP.length()/directionVector.length();
 	if (paramP > 1) paramP = 1;
 	slideParam = paramP;
 	double paramN = 0;
-	if (directionVector*vectorIntersectP < 0) {
+	if (directionVector*vectorIntersectP < 0){
 		paramP = 0;
-		MPoint pointIntersectN = SGMatrix::getLineIntersectPoint(edgeCenter, negativePoint, SGMouse::x - mouseXOrig, SGMouse::y - mouseYOrig, SGMatrix::getCamMatrix());
+		MPoint pointIntersectN = SGMatrix::getLineIntersectPoint(edgeCenter, negativePoint, SGMouse::x + pointOffsetXY.x, SGMouse::y + pointOffsetXY.y, SGMatrix::getCamMatrix());
 		MVector vectorIntersectN = pointIntersectN - edgeCenter;
 		paramN = vectorIntersectN.length() / (negativePoint- edgeCenter).length();
 		if (paramN > 1) paramN = 1;
@@ -858,8 +889,8 @@ void SGFunction::editSplitPoint()
 			int lastIndex = (int)spPointsArr[i].size() - 1;
 
 			MMatrix camMatrix = SGMatrix::getCamMatrix();
-			if ( i == 1 && SGOption::option.symInfo.isXMirror() ) {
-				camMatrix *= SGOption::option.symInfo.mirrorMatrix();
+			if ( i == 1 && SGToolCondition::option.symInfo.isXMirror() ) {
+				camMatrix *= SGToolCondition::option.symInfo.mirrorMatrix();
 			}
 			edgeSplitIntersectResult[i] = SGIntersectResult::getIntersectionResult(SGMouse::x, SGMouse::y, camMatrix);
 			edgeSplitIntersectResult[i].resultType = SGComponentType::kPolygon;
@@ -1036,7 +1067,7 @@ void SGFunction::selectionReduce() {
 
 void SGFunction::prepairSoftSelection() {
 	mouseXOrig = SGMouse::x; mouseYOrig = SGMouse::y;
-	softSelectionManip.center = SGSelection::sels.getSelectionCenter(SGOption::option.symInfo);
+	softSelectionManip.center = SGSelection::sels.getSelectionCenter(SGToolCondition::option.symInfo);
 	MGlobal::executeCommand("softSelect -softSelectEnabled true;");
 	MGlobal::executeCommand("softSelect -q -ssd;", softSelectionRadiusOrig);
 }
@@ -1146,7 +1177,7 @@ void SGFunction::setCamFocus()
 	MPoint centerPoint;
 
 	if (SGSelection::sels.selExists()) {
-		centerPoint = SGSelection::sels.getSelectionCenter(SGOption::option.symInfo);
+		centerPoint = SGSelection::sels.getSelectionCenter(SGToolCondition::option.symInfo);
 	}
 	else {
 		SGIntersectResult* pResult = &generalResult[0];
@@ -1267,5 +1298,5 @@ void SGFunction::dragSelectionRelease(bool shift, bool ctrl) {
 	else if (shift && ctrl) selType = 3;
 
 	SGBase::getIsolateMap(SGMesh::pMesh->dagPath);
-	SGSelection::sels.dragSelection(generalResult, points, SGMatrix::getCamMatrix(), SGOption::option.symInfo, selType);
+	SGSelection::sels.dragSelection(generalResult, points, SGMatrix::getCamMatrix(), SGToolCondition::option.symInfo, selType);
 }

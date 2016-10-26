@@ -99,9 +99,6 @@
     <ClInclude Include="SGMMCommand.h">
       <Filter>CONTROL\SGCommand</Filter>
     </ClInclude>
-    <ClInclude Include="SGOption.h">
-      <Filter>BASE\SGToolContext</Filter>
-    </ClInclude>
     <ClInclude Include="SGPermit.h">
       <Filter>BASE\SGPermit</Filter>
     </ClInclude>
@@ -137,6 +134,9 @@
     </ClInclude>
     <ClInclude Include="SGColor.h">
       <Filter>BASE\SGColor</Filter>
+    </ClInclude>
+    <ClInclude Include="SGToolCondition.h">
+      <Filter>BASE\SGToolContext</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -185,9 +185,6 @@
     <ClCompile Include="SGMMCommand.cpp">
       <Filter>CONTROL\SGCommand</Filter>
     </ClCompile>
-    <ClCompile Include="SGOption.cpp">
-      <Filter>BASE\SGToolContext</Filter>
-    </ClCompile>
     <ClCompile Include="SGPermit.cpp">
       <Filter>BASE\SGPermit</Filter>
     </ClCompile>
@@ -226,6 +223,9 @@
     </ClCompile>
     <ClCompile Include="SGColor.cpp">
       <Filter>BASE\SGColor</Filter>
+    </ClCompile>
+    <ClCompile Include="SGToolCondition.cpp">
+      <Filter>BASE\SGToolContext</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

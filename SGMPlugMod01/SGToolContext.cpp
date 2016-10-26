@@ -8,7 +8,7 @@
 #include "SGFile.h"
 #include "SGWidget.h"
 #include "SGMarkingMenu.h"
-#include "SGOption.h"
+#include "SGToolCondition.h"
 #include "SGPermit.h"
 #include "SGMouse.h"
 #include "SGKey.h"
@@ -58,7 +58,7 @@ void SGToolContext::toolOnSetup(MEvent& evt)
 	SGKey::initializeKeys();
 	SGMouse::initializeButtons();
 
-	SGMesh::getSelection(SGOption::option.symInfo);
+	SGMesh::getSelection(SGToolCondition::option.symInfo);
 	SGSelection::sels.initialize(SGMesh::pMesh);
 
 	M3dView activeView = M3dView().active3dView();
@@ -81,7 +81,9 @@ void SGToolContext::toolOnSetup(MEvent& evt)
 		sprintf(buffer, "maintainActiveChangeSelectMode %s", dagNode.partialPathName().asChar() );
 		MGlobal::executeCommand(buffer);
 	}
+
 	SGMarkingMenu::menu.setDefaultMenu();
+	SGToolCondition::toolIsOn = true;
 }
 
 
@@ -98,6 +100,7 @@ void SGToolContext::toolOffCleanup()
 	this->setCursor(MCursor::defaultCursor);
 
 	SGMarkingMenu::menu.setMenu(SGMarkingMenu::origCommand);
+	SGToolCondition::toolIsOn = false;
 }
 
 

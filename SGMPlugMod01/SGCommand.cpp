@@ -14,7 +14,7 @@
 #include "SGTransformManip.h"
 #include "SGTimeCheck.h"
 #include "Names.h"
-#include "SGOption.h"
+#include "SGToolCondition.h"
 
 
 MDagPath  SGCommand::dagPathMesh;
@@ -51,6 +51,7 @@ SGCommand::SGCommand() {
 	m_isDel = false;
 	m_isUpm = false;
 	m_isUpc = false;
+	m_getOption = false;
 	m_isSym = 0;
 	m_undoableValue = true;
 }
@@ -74,6 +75,7 @@ MSyntax SGCommand::newSyntax() {
 	syntax.addFlag("-upm", "-updateMesh", MSyntax::kNoArg);
 	syntax.addFlag("-upc", "-updateCenter", MSyntax::kNoArg);
 	syntax.addFlag("-spz", "-setPntsZero", MSyntax::kNoArg);
+	syntax.addFlag("-get", "-getOption",  MSyntax::kNoArg);
 	syntax.addFlag("-sym", "-symmetry", MSyntax::kLong);
 	return syntax;
 }
@@ -90,11 +92,15 @@ MStatus SGCommand::doIt(const MArgList& arg) {
 	if (argStr == "-upm") m_isUpm = true;
 	if (argStr == "-upc") m_isUpc = true;
 	if (argStr == "-spz") m_isPntsZero = true;
+	if (argStr == "-get") {
+		m_getOption = true;
+		m_undoableValue = false;
+	}
 	if (argStr == "-sym") {
 		m_isSym = arg.asInt(1);
 		m_undoableValue = false;
-		SGOption::option.setSymmetry(m_isSym);
-		SGMesh::pMesh->update(SGOption::option.symInfo, true );
+		SGToolCondition::option.setSymmetry(m_isSym);
+		SGMesh::pMesh->update(SGToolCondition::option.symInfo, true );
 		return MS::kSuccess;
 	}
 
@@ -143,30 +149,40 @@ MStatus SGCommand::redoIt() {
 	else if (m_isVm) {
 		MPointArray points;
 		fnMesh.getPoints(points);
-		for (int i = 0; i < m_vmMoveIndices.length(); i++) {
+		for ( unsigned int i = 0; i < m_vmMoveIndices.length(); i++) {
 			points[m_vmMoveIndices[i]] = m_vmPointsAfter[i];
 		}
 		fnMesh.setPoints(points);
-		pMesh->updateVertexAndNormals();
-		pMesh->updateBaseMesh();
+
+		if (SGToolCondition::toolIsOn) {
+			pMesh->updateVertexAndNormals();
+			pMesh->updateBaseMesh();
+		}
 	}
 	else if (m_isDel) {
 		SGCommand::deleteComponent(m_dagPathMesh, m_delEdgeIndices, m_delPolyIndices);
 		fnMesh.updateSurface();
-		active3dView.refresh(false, true);
-		pMesh->update(SGOption::option.symInfo);
+		if (SGToolCondition::toolIsOn) {
+			active3dView.refresh(false, true);
+			pMesh->update(SGToolCondition::option.symInfo);
+		}
 	}
-	else if (m_isUpm) {
+	else if (m_isUpm && SGToolCondition::toolIsOn) {
 		active3dView.refresh(false, true);
-		pMesh->update(SGOption::option.symInfo);
+		pMesh->update(SGToolCondition::option.symInfo);
 	}
-	else if (m_isUpc) {
+	else if (m_isUpc&&SGToolCondition::toolIsOn) {
 		active3dView.refresh(false, true);
 		pMesh->updateVertexAndNormals();
 		pMesh->updateBaseMesh();
 	}
+	else if (m_getOption) {
+		MString optionString = SGToolCondition::getOptionString();
+		MPxCommand::appendToResult(optionString);
+	}
 
-	transManip.build();
+	if (SGToolCondition::toolIsOn)
+		transManip.build();
 	return MS::kSuccess;
 }
 
@@ -185,33 +201,38 @@ MStatus SGCommand::undoIt() {
 	else if (m_isVm) {
 		MPointArray points;
 		fnMesh.getPoints(points);
-		for (int i = 0; i < m_vmMoveIndices.length(); i++) {
+		for ( unsigned int i = 0; i < m_vmMoveIndices.length(); i++) {
 			points[m_vmMoveIndices[i]] = m_vmPointsBefore[i];
 		}
 		fnMesh.setPoints(points);
-		pMesh->updateVertexAndNormals();
-		pMesh->updateBaseMesh();
+		if (SGToolCondition::toolIsOn) {
+			pMesh->updateVertexAndNormals();
+			pMesh->updateBaseMesh();
+		}
 	}
 	else if (m_isDel) {
 		if (m_delEdgeIndices.length() || m_delPolyIndices.length()) {
 			if (m_delPolyIndices.length())SGNodeControl::deleteBeforeNode(m_dagPathMesh, "deleteComponent", "inputGeometry");
 			else if (m_delEdgeIndices.length())SGNodeControl::deleteBeforeNode(m_dagPathMesh, "polyDelEdge", "inputPolymesh");
 			fnMesh.updateSurface();
-			active3dView.refresh(false, true);
-			pMesh->update(SGOption::option.symInfo);
+			if (SGToolCondition::toolIsOn) {
+				active3dView.refresh(false, true);
+				pMesh->update(SGToolCondition::option.symInfo);
+			}
 		}
 	}
-	else if (m_isUpm) {
+	else if (m_isUpm && SGToolCondition::toolIsOn) {
 		active3dView.refresh(false, true);
-		pMesh->update(SGOption::option.symInfo);
+		pMesh->update(SGToolCondition::option.symInfo);
 	}
-	else if (m_isUpc) {
+	else if (m_isUpc && SGToolCondition::toolIsOn) {
 		active3dView.refresh(false, true);
 		pMesh->updateVertexAndNormals();
 		pMesh->updateBaseMesh();
 	}
 
-	transManip.build();
+	if (SGToolCondition::toolIsOn)
+		transManip.build();
 	return MS::kSuccess;
 }
 
