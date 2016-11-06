@@ -8,9 +8,17 @@
 class SGToolCondition
 {
 public:
+
+	enum toolMode {
+		kDefault,
+		kMoveMode,
+		kBrushMode
+	};
+
 	SGToolCondition();
 
 	void setSymmetry( int modeNum );
+	void setToolMode(int modeNum);
 	
 	void update();
 
@@ -18,6 +26,7 @@ public:
 	float manipScale;
 	SGSymmetry symInfo;
 	SGSpace  spaceInfo;
+	SGToolCondition::toolMode mode;
 	
 	static SGToolCondition option;
 	static MString getOptionString();

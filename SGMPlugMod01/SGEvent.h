@@ -14,6 +14,7 @@
 #include "SGPolygonManip.h"
 #include "SGSoftSelectionManip.h"
 #include "SGDragSelectionManip.h"
+#include "SGMoveBrushManip.h"
 
 
 class SGEvent : public QObject
@@ -41,9 +42,6 @@ public:
 	void getGeneralIntersection();
 
 	void markingMenuEvent();
-
-	void manipUpdate();
-
 	void vertexMoveEvent();
 
 	void saveEvent();
@@ -54,6 +52,10 @@ public:
 	void smoothDisplay();
 
 	void softSelectEvent();
+
+	void moveBrushEvent();
+
+	void manipUpdate();
 
 	MMatrixArray   camMatrixList;
 
@@ -82,4 +84,6 @@ public:
 	bool m_middleJustPress;
 	bool m_middleJustRelease;
 	bool m_middlePressed;
+
+	bool m_isDragSelecting;
 };

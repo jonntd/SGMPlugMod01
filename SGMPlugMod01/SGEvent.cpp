@@ -28,6 +28,7 @@ extern SGNormalManip          normalManip;
 extern SGPolygonManip         polygonManip;
 extern SGSoftSelectionManip   softSelectionManip;
 extern SGDragSelectionManip   dragSelectionManip;
+extern SGMoveBrushManip       moveBrushManip;
 
 extern vector<SGIntersectResult> generalResult;
 extern vector<SGIntersectResult> edgeSplitIntersectResult;
@@ -87,20 +88,26 @@ bool SGEvent::eventFilter(QObject* object, QEvent* evt)
 
 	softSelectEvent();
 	getIntersection();
-	manipUpdate();
 
-	selectEvent();
-	vertexMoveEvent();
-	selectDragEvent();
+	if (SGToolCondition::option.mode == SGToolCondition::kDefault) {
+		selectEvent();
+		vertexMoveEvent();
+		edgeSplitEvent();
+		edgeSplitRingEvent();
+		edgeSlideEvent();
+		deleteEvent();
+	}
+	else if (SGToolCondition::option.mode == SGToolCondition::kMoveMode) {
+		selectEvent();
+		moveBrushEvent();
+	}
+	
 	markingMenuEvent();
-	edgeSplitEvent();
-	edgeSplitRingEvent();
-	edgeSlideEvent();
-	deleteEvent();
 	camFocusEvent();
 	saveEvent();
 	smoothDisplay();
-
+	
+	manipUpdate();
 	M3dView().active3dView().refresh(false, true);
 
 	if (!m_altPressed && m_leftJustPress ||
@@ -141,6 +148,8 @@ bool SGEvent::translateEvent(QEvent* evt) {
 	m_middleJustPress = false;
 	m_middleJustRelease = false;
 	m_middlePressed = false;
+
+	m_isDragSelecting = false;
 
 	m_isMouseEvent = SGMouse::translateEvent(evt);
 	m_isKeyEvent   = SGKey::translateEvent(evt);
@@ -531,7 +540,7 @@ void SGEvent::selectEvent() {
 
 	if (mousePressed && m_mouseMove) {
 		SGFunction::dragSelectionDrag();
-		dragSelectionManip.draw(0);
+		m_isDragSelecting = true;
 		mouseDraged = true;
 	}
 
@@ -595,8 +604,17 @@ void SGEvent::markingMenuEvent() {
 void SGEvent::manipUpdate() {
 	manip->clearAll();
 
-	if( SGKey::key("b")->m_condition == SGKey::kPressed && m_mousePressed  && m_mouseMove )
+	if( SGKey::key("b")->m_condition == SGKey::kPressed && m_leftPressed  && m_mouseMove )
 		softSelectionManip.draw(0);
+
+
+	if ( SGToolCondition::option.mode == SGToolCondition::kMoveMode && !m_altPressed && !m_isDragSelecting ) {
+		moveBrushManip.draw(0);
+	}
+
+	if (m_isDragSelecting) {
+		dragSelectionManip.draw(0);
+	}
 	
 	if (m_controlPressed) {
 		if (normalManip.exists()) normalManip.draw(0, m_leftPressed );
@@ -615,7 +633,8 @@ void SGEvent::manipUpdate() {
 		}
 	}
 	else {
-		if (transManip.exists()) transManip.draw(0, m_leftPressed || m_middlePressed );
+		if (transManip.exists() && SGToolCondition::option.mode == SGToolCondition::kDefault ) 
+			transManip.draw(0, m_leftPressed || m_middlePressed );
 	}
 	if (transManip.intersectType == SGTransformManipIntersector::kNone) {
 		if ( !m_altPressed && !m_mousePressed ) {
@@ -663,11 +682,17 @@ void SGEvent::softSelectEvent() {
 	static bool softSelectEdited = false;
 	static bool softSelectMoved = false;
 
+	if (m_middlePressed) {
+		softSelectPressed = false;
+		softSelectEdited = false;
+		softSelectMoved = false;
+	}
+
 	if (SGKey::key("b")->m_eventType == SGKey::kPress) {
 		softSelectPressed = true;
 		softSelectEdited = false;
 	}
-	else if (SGKey::key("b")->m_eventType == SGKey::kRelease) {
+	else if (SGKey::key("b")->m_eventType == SGKey::kRelease && softSelectPressed ) {
 		if (!softSelectMoved && !softSelectEdited) SGFunction::toggleSoftSelection();
 		softSelectPressed = false;
 	}
@@ -684,5 +709,22 @@ void SGEvent::softSelectEvent() {
 		SGFunction::setSoftSelection();
 		softSelectEdited = true;
 		softSelectMoved = false;
+	}
+}
+
+
+
+void SGEvent::moveBrushEvent() {
+	
+	if (m_middleJustPress) {
+		SGFunction::prepairMoveBrushRadius();
+	}
+
+	if (!m_middlePressed) {
+		SGFunction::updateMoveBrushCenter();
+	}
+
+	if (m_middlePressed && SGKey::key("b")->m_condition == SGKey::kPressed && m_mouseMove ) {
+		SGFunction::editMoveBrushRadius();
 	}
 }

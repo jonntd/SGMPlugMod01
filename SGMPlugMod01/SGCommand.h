@@ -41,6 +41,7 @@ public:
 	bool m_isUpc;
 	bool m_isPntsZero;
 	long m_isSym;
+	long m_isTm;
 	bool m_getOption;
 
 	bool m_undoableValue;

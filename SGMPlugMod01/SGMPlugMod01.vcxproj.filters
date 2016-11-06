@@ -58,6 +58,9 @@
     <Filter Include="BASE\SGColor">
       <UniqueIdentifier>{43f580d0-8eef-4382-bb8c-cf03635bbc3c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="CONTROL\SGMoveBrushManip">
+      <UniqueIdentifier>{06ffdb55-814f-4793-94ec-6aab4a1bc170}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="precompile.h">
@@ -137,6 +140,9 @@
     </ClInclude>
     <ClInclude Include="SGToolCondition.h">
       <Filter>BASE\SGToolContext</Filter>
+    </ClInclude>
+    <ClInclude Include="SGMoveBrushManip.h">
+      <Filter>CONTROL\SGMoveBrushManip</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -226,6 +232,9 @@
     </ClCompile>
     <ClCompile Include="SGToolCondition.cpp">
       <Filter>BASE\SGToolContext</Filter>
+    </ClCompile>
+    <ClCompile Include="SGMoveBrushManip.cpp">
+      <Filter>CONTROL\SGMoveBrushManip</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

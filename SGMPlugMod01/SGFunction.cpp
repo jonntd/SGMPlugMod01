@@ -12,6 +12,7 @@
 #include "SGNormalManip.h"
 #include "SGSoftSelectionManip.h"
 #include "SGDragSelectionManip.h"
+#include "SGMoveBrushManip.h"
 #include "SGNodeControl.h"
 #include "SGToolCondition.h"
 #include "Names.h"
@@ -38,6 +39,7 @@ MFloatArray SGFunction::vertexWeights;
 MFloatVectorArray SGFunction::normals_before;
 MStringArray SGFunction::bevelNodes;
 double SGFunction::softSelectionRadiusOrig;
+double SGFunction::moveBrushRadiusOrig;
 
 double SGFunction::slideParam;
 vector<MIntArray> SGFunction::edgeGroups;
@@ -48,6 +50,7 @@ extern SGManip* manip;
 extern SGTransformManip transManip;
 extern SGSoftSelectionManip softSelectionManip;
 extern SGDragSelectionManip dragSelectionManip;
+extern SGMoveBrushManip moveBrushManip;
 extern vector<SGIntersectResult> generalResult;
 extern vector<vector<SGSplitPoint>> spPointsArr;
 extern vector<SGIntersectResult> edgeSplitIntersectResult;
@@ -1104,6 +1107,29 @@ void SGFunction::toggleSoftSelection() {
 	else {
 		MGlobal::executeCommand("softSelect -e -sse 1;", false, true);
 	}
+}
+
+
+void SGFunction::updateMoveBrushCenter() {
+	moveBrushManip.center.x = SGMouse::x;
+	moveBrushManip.center.y = SGMouse::y;
+}
+
+
+
+void SGFunction::prepairMoveBrushRadius() {
+	mouseXOrig = SGMouse::x; mouseYOrig = SGMouse::y;
+	moveBrushManip.center.x = mouseXOrig;
+	moveBrushManip.center.y = mouseYOrig;
+	moveBrushRadiusOrig = moveBrushManip.radius;
+}
+
+
+
+void SGFunction::editMoveBrushRadius() {
+	double addValue = SGMouse::x - mouseXOrig;
+	moveBrushManip.radius = moveBrushRadiusOrig + addValue;
+	sgPrintf("move brush radius edit : %f", moveBrushManip.radius);
 }
 
 

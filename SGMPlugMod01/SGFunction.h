@@ -77,6 +77,11 @@ public:
 	static void setSoftSelection();
 	static void toggleSoftSelection();
 
+	static double moveBrushRadiusOrig;
+	static void updateMoveBrushCenter();
+	static void prepairMoveBrushRadius();
+	static void editMoveBrushRadius();
+
 	static void editSplitRingPoint();
 	static void polySplitRing();
 

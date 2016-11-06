@@ -31,6 +31,7 @@ SGToolCondition::SGToolCondition() {
 	symInfo.setNoMirror();
 	update();
 	toolIsOn = false;
+	mode = SGToolCondition::kDefault;
 }
 
 void SGToolCondition::update() {
@@ -64,6 +65,20 @@ void SGToolCondition::setSymmetry(int modeNum)
 		symInfo.setNoMirror();
 	}
 	update();
+}
+
+
+void SGToolCondition::setToolMode(int modeNum)
+{
+	if (modeNum == 0) {
+		mode = kDefault;
+	}
+	else if(modeNum == 1) {
+		mode = kMoveMode;
+	}
+	else if (modeNum == 2) {
+		mode = kBrushMode;
+	}
 }
 
 

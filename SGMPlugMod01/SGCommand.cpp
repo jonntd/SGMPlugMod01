@@ -53,6 +53,7 @@ SGCommand::SGCommand() {
 	m_isUpc = false;
 	m_getOption = false;
 	m_isSym = 0;
+	m_isTm = 0;
 	m_undoableValue = true;
 }
 
@@ -77,6 +78,7 @@ MSyntax SGCommand::newSyntax() {
 	syntax.addFlag("-spz", "-setPntsZero", MSyntax::kNoArg);
 	syntax.addFlag("-get", "-getOption",  MSyntax::kNoArg);
 	syntax.addFlag("-sym", "-symmetry", MSyntax::kLong);
+	syntax.addFlag("-tm", "-toolMode", MSyntax::kLong);
 	return syntax;
 }
 
@@ -101,6 +103,12 @@ MStatus SGCommand::doIt(const MArgList& arg) {
 		m_undoableValue = false;
 		SGToolCondition::option.setSymmetry(m_isSym);
 		SGMesh::pMesh->update(SGToolCondition::option.symInfo, true );
+		return MS::kSuccess;
+	}
+	if (argStr == "-tm") {
+		m_isTm = arg.asInt(1);
+		m_undoableValue = false;
+		SGToolCondition::option.setToolMode( m_isTm );
 		return MS::kSuccess;
 	}
 

@@ -15,13 +15,13 @@ void SGMarkingMenu::createPythonCommand() {
 		"	for key, value in options.items():\n"
 		"		if key == 'edge' and value == 1:\n"
 		"			try:" + mmCommandPython + "_edgeMenu(parentName)\n"
-		"			except: pass\n"
+		"			except: print 'edge menu failed '\n"
 		"		elif key == 'poly' and value == 1:\n"
 		"			try:" + mmCommandPython + "_polyMenu(parentName)\n"
-		"			except: pass\n"
+		"			except: print 'poly menu failed '\n"
 		"		elif key == 'vtx' and value == 1:\n"
 		"			try:" + mmCommandPython + "_vtxMenu(parentName)\n"
-		"			except: pass\n";
+		"			except: print 'vtx menu failed '\n";
 	//sgPrintf("python command : \n%s", pythonCommand.asChar() );
 	MGlobal::executePythonCommand(pythonCommand);
 }

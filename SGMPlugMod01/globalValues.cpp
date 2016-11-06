@@ -7,6 +7,7 @@
 #include "SGPolygonManip.h"
 #include "SGSoftSelectionManip.h"
 #include "SGDragSelectionManip.h"
+#include "SGMoveBrushManip.h"
 #include "SGWidget.h"
 
 
@@ -20,6 +21,7 @@ SGNormalManip          normalManip;
 SGPolygonManip         polygonManip;
 SGSoftSelectionManip   softSelectionManip;
 SGDragSelectionManip   dragSelectionManip;
+SGMoveBrushManip       moveBrushManip;
 
 vector<SGIntersectResult> generalResult;
 vector<SGIntersectResult> edgeSplitIntersectResult;
