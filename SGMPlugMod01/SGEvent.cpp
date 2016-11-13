@@ -98,7 +98,9 @@ bool SGEvent::eventFilter(QObject* object, QEvent* evt)
 		deleteEvent();
 	}
 	else if (SGToolCondition::option.mode == SGToolCondition::kMoveMode) {
-		selectEvent();
+		if (m_leftJustPress || m_leftJustRelease || m_leftPressed) {}
+		else
+			selectEvent();
 		moveBrushEvent();
 	}
 	
@@ -526,7 +528,7 @@ void SGEvent::selectEvent() {
 	}
 
 
-	if (m_leftJustPress) {
+	if (m_leftJustPress|| m_middleJustPress) {
 		if (generalResult[0].resultType == SGComponentType::kNone &&
 			normalManip.intersectType == SGNormalManipIntersector::kNone &&
 			transManip.intersectType == SGTransformManipIntersector::kNone) {
@@ -544,7 +546,7 @@ void SGEvent::selectEvent() {
 		mouseDraged = true;
 	}
 
-	if (m_leftJustRelease && mouseDraged) {
+	if ( (m_leftJustRelease|| m_middleJustRelease) && mouseDraged) {
 		mousePressed = false;
 		mouseDraged = false;
 		SGFunction::dragSelectionRelease(m_shiftPressed, m_controlPressed);
@@ -606,9 +608,7 @@ void SGEvent::manipUpdate() {
 
 	if( SGKey::key("b")->m_condition == SGKey::kPressed && m_leftPressed  && m_mouseMove )
 		softSelectionManip.draw(0);
-
-
-	if ( SGToolCondition::option.mode == SGToolCondition::kMoveMode && !m_altPressed && !m_isDragSelecting ) {
+	else if ( SGToolCondition::option.mode == SGToolCondition::kMoveMode && !m_altPressed && !m_isDragSelecting ) {
 		moveBrushManip.draw(0);
 	}
 
